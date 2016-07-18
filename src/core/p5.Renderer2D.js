@@ -841,26 +841,50 @@ function (mode, vertices, isCurve, isBezier,
       }
     } else if (shapeKind === constants.QUAD_STRIP) {
       if (numVerts > 3) {
+        // Track fill and stroke of the current quad, starting with the first
+        var lastFill = vertices[0][5];
+        var lastStroke = vertices[0][6];
+        // Start the first shape
+        if (this._doFill) {
+          this._pInst.fill(lastFill);
+        }
+        if (this._doStroke) {
+          this._pInst.stroke(lastStroke);
+        }
+        this.drawingContext.beginPath();
         for (i = 0; i + 1 < numVerts; i += 2) {
           v = vertices[i];
-          this.drawingContext.beginPath();
           if (i + 3 < numVerts) {
+            var currentFill = vertices[i + 3][5];
+            var currentStroke = vertices[i + 3][6];
+            // Check if the stroke/fill has changed
+            if ((this._doFill && (currentFill !== lastFill)) ||
+              (this._doStroke && (currentStroke !== lastStroke))) {
+              // Close the last shape
+              this._doFillStrokeClose();
+              // Start a new shape with the appropriate fill & stroke
+              if (this._doFill) {
+                this._pInst.fill(currentFill);
+              }
+              if (this._doStroke) {
+                this._pInst.stroke(currentStroke);
+              }
+              lastFill = currentFill;
+              lastStroke = currentStroke;
+              this.drawingContext.beginPath();
+            }
+            // Add the quad vertices
             this.drawingContext.moveTo(vertices[i + 2][0], vertices[i+2][1]);
             this.drawingContext.lineTo(v[0], v[1]);
             this.drawingContext.lineTo(vertices[i + 1][0], vertices[i+1][1]);
             this.drawingContext.lineTo(vertices[i + 3][0], vertices[i+3][1]);
-            if (this._doFill) {
-              this._pInst.fill(vertices[i + 3][5]);
-            }
-            if (this._doStroke) {
-              this._pInst.stroke(vertices[i + 3][6]);
-            }
           } else {
             this.drawingContext.moveTo(v[0], v[1]);
             this.drawingContext.lineTo(vertices[i + 1][0], vertices[i+1][1]);
           }
-          this._doFillStrokeClose();
         }
+        // Close final shape
+        this._doFillStrokeClose();
       }
     } else {
       this.drawingContext.beginPath();
