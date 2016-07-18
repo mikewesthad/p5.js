@@ -841,7 +841,9 @@ function (mode, vertices, isCurve, isBezier,
       }
     } else if (shapeKind === constants.QUAD_STRIP) {
       if (numVerts > 3) {
-        // Track fill and stroke of the current quad, starting with the first
+        // Draw the quad strip with as few paths as possible in order to avoid
+        // anti-aliasing "gaps" between quads in the strip. Only start a new
+        // path when the fill/stroke changes from one quad to the next.
         var lastFill = vertices[0][5];
         var lastStroke = vertices[0][6];
         // Start the first shape
